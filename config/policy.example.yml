@@ -1,0 +1,16 @@
+version: 1
+defaults:
+  max_rows: 1000
+  timeout_seconds: 15
+  approved_timeout_seconds: 60
+  result_max_bytes: 5242880
+  l1_scan_rows: 100000
+  l2_scan_rows: 1000000
+deny:
+  schemas: [mysql, sys, performance_schema, information_schema]
+  functions: [SLEEP, BENCHMARK, LOAD_FILE]
+  statements: [INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, TRUNCATE, GRANT, REVOKE]
+approval:
+  L1: analyst
+  L2: admin
+  L3: never

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Data Agent 项目端到端流转动画与模块说明">
+  <title>Data Agent · 项目流转图</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07100f;
+      --surface: #0d1816;
+      --surface-2: #12201d;
+      --line: #263a35;
+      --text: #edf7f3;
+      --muted: #9eb0aa;
+      --teal: #45d6b1;
+      --teal-soft: rgba(69, 214, 177, .12);
+      --amber: #f1b84b;
+      --amber-soft: rgba(241, 184, 75, .12);
+      --red: #ff7d73;
+      --red-soft: rgba(255, 125, 115, .12);
+      --blue: #79aef7;
+      --blue-soft: rgba(121, 174, 247, .12);
+      --radius: 18px;
+      --shadow: 0 20px 50px rgba(0, 0, 0, .3);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 15% -10%, rgba(69, 214, 177, .14), transparent 30rem),
+        radial-gradient(circle at 90% 20%, rgba(121, 174, 247, .09), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      line-height: 1.6;
+    }
+
+    button { font: inherit; }
+    button:focus-visible { outline: 3px solid rgba(69, 214, 177, .45); outline-offset: 3px; }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 56px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 54px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; letter-spacing: -.02em; }
+    .brand-mark {
+      display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px;
+      color: #06221a; background: var(--teal); box-shadow: 0 0 30px rgba(69, 214, 177, .25);
+    }
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--line);
+      border-radius: 999px; color: var(--muted); background: rgba(13, 24, 22, .7); font-size: 13px;
+    }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr); gap: 42px; align-items: end; margin-bottom: 44px; }
+    .eyebrow { margin: 0 0 10px; color: var(--teal); font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 800px; font-size: clamp(40px, 6vw, 76px); line-height: 1.03; letter-spacing: -.055em; font-weight: 700; }
+    h1 span { color: var(--teal); }
+    .hero p { margin: 20px 0 0; max-width: 720px; color: var(--muted); font-size: clamp(16px, 2vw, 19px); }
+    .principle { padding-left: 24px; border-left: 1px solid var(--line); color: var(--muted); }
+    .principle strong { display: block; margin-bottom: 8px; color: var(--text); font-size: 17px; }
+
+    .stage {
+      position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 24px;
+      background: linear-gradient(180deg, rgba(18, 32, 29, .94), rgba(9, 18, 16, .96)); box-shadow: var(--shadow);
+    }
+    .stage::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .26;
+      background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+      background-size: 32px 32px; mask-image: linear-gradient(to bottom, black, transparent 75%);
+    }
+    .stage-head { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 20px 24px; border-bottom: 1px solid var(--line); }
+    .stage-title { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .stage-title small { color: var(--muted); font-weight: 400; }
+    .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+    .control {
+      border: 1px solid var(--line); border-radius: 10px; padding: 8px 13px; color: var(--text); background: var(--surface);
+      cursor: pointer; transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+    .control:hover { border-color: #41645b; background: var(--surface-2); transform: translateY(-1px); }
+    .control.primary { color: #052019; background: var(--teal); border-color: var(--teal); font-weight: 700; }
+
+    .scenario-bar { position: relative; display: flex; gap: 8px; flex-wrap: wrap; padding: 16px 24px 0; }
+    .scenario {
+      border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; color: var(--muted); background: rgba(7, 16, 15, .6); cursor: pointer;
+    }
+    .scenario[aria-pressed="true"] { color: var(--text); border-color: var(--scenario-color, var(--teal)); background: var(--scenario-bg, var(--teal-soft)); }
+
+    .flow-wrap { position: relative; padding: 26px 24px 18px; }
+    .flow {
+      position: relative; display: grid; grid-template-columns: repeat(9, minmax(90px, 1fr)); align-items: start;
+      gap: 20px; min-width: 1030px; padding: 4px 0 12px;
+    }
+    .flow-track { position: absolute; left: 5%; right: 5%; top: 43px; height: 2px; background: var(--line); }
+    .flow-progress { width: 0; height: 100%; background: linear-gradient(90deg, var(--teal), var(--blue)); box-shadow: 0 0 18px rgba(69, 214, 177, .35); transition: width .55s cubic-bezier(.4, 0, .2, 1); }
+    .packet {
+      position: absolute; z-index: 4; top: 37px; left: calc(5% - 6px); width: 13px; height: 13px; border-radius: 50%;
+      background: var(--teal); box-shadow: 0 0 0 5px rgba(69, 214, 177, .13), 0 0 24px var(--teal);
+      transition: left .55s cubic-bezier(.4, 0, .2, 1), background .2s ease, box-shadow .2s ease;
+    }
+    .flow-scroll { overflow-x: auto; scrollbar-color: #345249 transparent; scrollbar-width: thin; }
+    .node { position: relative; z-index: 2; border: 0; padding: 0; color: inherit; background: none; text-align: left; cursor: pointer; }
+    .node-icon {
+      display: grid; place-items: center; width: 48px; height: 48px; margin: 0 auto 14px; border: 1px solid var(--line);
+      border-radius: 14px; color: var(--muted); background: var(--surface); transition: all .35s ease;
+    }
+    .node strong { display: block; color: var(--muted); font-size: 13px; text-align: center; transition: color .3s ease; }
+    .node span { display: block; margin-top: 3px; color: #70827c; font-size: 11px; text-align: center; }
+    .node.is-done .node-icon { color: #06221a; border-color: var(--teal); background: var(--teal); }
+    .node.is-done strong { color: var(--text); }
+    .node.is-active .node-icon { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); box-shadow: 0 0 0 6px rgba(69, 214, 177, .06), 0 0 30px rgba(69, 214, 177, .18); transform: translateY(-4px); }
+    .node.is-active strong { color: var(--teal); }
+    .node.is-skipped { opacity: .28; }
+    .node.is-danger .node-icon { color: var(--red); border-color: var(--red); background: var(--red-soft); }
+    .node.is-waiting .node-icon { color: var(--amber); border-color: var(--amber); background: var(--amber-soft); }
+
+    .detail {
+      position: relative; display: grid; grid-template-columns: 80px minmax(0, 1.3fr) minmax(250px, .7fr); gap: 22px;
+      align-items: start; margin: 0 24px 24px; padding: 22px; border-top: 1px solid var(--line); background: rgba(7, 16, 15, .5);
+    }
+    .step-index { color: var(--teal); font: 700 34px/1 ui-monospace, SFMono-Regular, Consolas, monospace; }
+    .detail h2 { margin: 0 0 6px; font-size: 21px; letter-spacing: -.02em; }
+    .detail p { margin: 0; color: var(--muted); }
+    .code-ref { padding-left: 18px; border-left: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+    .code-ref code { display: block; margin-top: 5px; color: var(--blue); overflow-wrap: anywhere; }
+
+    .branches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 26px; }
+    .branch { position: relative; overflow: hidden; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(13, 24, 22, .8); }
+    .branch::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--branch-color); }
+    .branch-head { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+    .branch h3 { margin: 0; font-size: 17px; }
+    .risk { padding: 3px 9px; border-radius: 999px; color: var(--branch-color); background: color-mix(in srgb, var(--branch-color) 12%, transparent); font: 700 12px/1.5 ui-monospace, monospace; }
+    .branch p { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+    .branch.l0 { --branch-color: var(--teal); }
+    .branch.l1 { --branch-color: var(--amber); }
+    .branch.l3 { --branch-color: var(--red); }
+
+    .architecture { margin-top: 70px; }
+    .section-heading { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: end; margin-bottom: 24px; }
+    .section-heading h2 { margin: 0; font-size: clamp(28px, 4vw, 46px); line-height: 1.12; letter-spacing: -.04em; }
+    .section-heading p { margin: 0; color: var(--muted); }
+    .layers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .layer { padding: 20px; border-top: 1px solid var(--line); background: linear-gradient(180deg, rgba(18, 32, 29, .55), transparent); }
+    .layer-number { color: var(--teal); font: 700 12px ui-monospace, monospace; letter-spacing: .12em; }
+    .layer h3 { margin: 16px 0 8px; font-size: 18px; }
+    .layer p { margin: 0; color: var(--muted); font-size: 14px; }
+    .layer code { display: inline-block; margin-top: 14px; color: var(--blue); font-size: 12px; }
+
+    .facts { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 56px; }
+    .fact-block { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(13, 24, 22, .65); }
+    .fact-block h2 { margin: 0 0 14px; font-size: 20px; }
+    .fact-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+    .fact-list li { display: flex; gap: 11px; color: var(--muted); font-size: 14px; }
+    .fact-list li::before { content: ""; flex: 0 0 auto; width: 7px; height: 7px; margin-top: 8px; border-radius: 50%; background: var(--teal); }
+    .fact-block.warning .fact-list li::before { background: var(--amber); }
+
+    footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 42px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+    @media (max-width: 900px) {
+      .hero, .section-heading { grid-template-columns: 1fr; }
+      .principle { padding-left: 0; border-left: 0; }
+      .branches, .layers { grid-template-columns: 1fr 1fr; }
+      .detail { grid-template-columns: 64px 1fr; }
+      .code-ref { grid-column: 2; padding-left: 0; border-left: 0; }
+    }
+    @media (max-width: 620px) {
+      .shell { width: min(100% - 20px, 1180px); padding-top: 16px; }
+      .topbar { margin-bottom: 36px; }
+      .live-badge { display: none; }
+      .hero { gap: 24px; }
+      .stage-head { align-items: flex-start; flex-direction: column; }
+      .scenario-bar, .flow-wrap { padding-left: 16px; padding-right: 16px; }
+      .detail { grid-template-columns: 1fr; margin: 0 16px 16px; }
+      .code-ref { grid-column: auto; }
+      .branches, .layers, .facts { grid-template-columns: 1fr; }
+      footer { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">D</span><span>Data Agent / Flow Map</span></div>
+      <div class="live-badge"><span class="live-dot"></span>基于当前代码实现 · 2026-08-20</div>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Controlled Text-to-SQL</p>
+        <h1>从一句业务问题，到一条<span>受控查询</span></h1>
+        <p>模型提出候选 SQL，程序决定它能否执行。点击不同风险场景，逐步查看请求如何穿过前端、Pipeline、安全网关、审批与 MySQL。</p>
+      </div>
+      <div class="principle"><strong>项目主原则</strong>生成权与执行权分离。即使模型输出错误，AST 校验、表白名单、审批和只读账号仍然独立生效。</div>
+    </section>
+
+    <section class="stage" aria-labelledby="flow-title">
+      <div class="stage-head">
+        <div class="stage-title" id="flow-title">请求生命周期 <small id="scenario-label">L0 · 安全查询</small></div>
+        <div class="controls">
+          <button class="control primary" id="play" type="button">▶ 自动播放</button>
+          <button class="control" id="previous" type="button">← 上一步</button>
+          <button class="control" id="next" type="button">下一步 →</button>
+        </div>
+      </div>
+
+      <div class="scenario-bar" role="group" aria-label="选择风险场景">
+        <button class="scenario" style="--scenario-color:var(--teal);--scenario-bg:var(--teal-soft)" data-scenario="l0" aria-pressed="true" type="button">L0 自动执行</button>
+        <button class="scenario" style="--scenario-color:var(--amber);--scenario-bg:var(--amber-soft)" data-scenario="l1" aria-pressed="false" type="button">L1 人工审批</button>
+        <button class="scenario" style="--scenario-color:var(--red);--scenario-bg:var(--red-soft)" data-scenario="l3" aria-pressed="false" type="button">L3 永久拒绝</button>
+      </div>
+
+      <div class="flow-wrap">
+        <div class="flow-scroll">
+          <div class="flow" id="flow">
+            <div class="flow-track"><div class="flow-progress" id="progress"></div></div>
+            <div class="packet" id="packet" aria-hidden="true"></div>
+            <button class="node is-active" data-step="0" type="button"><span class="node-icon">问</span><strong>用户提问</strong><span>Vue 工作台</span></button>
+            <button class="node" data-step="1" type="button"><span class="node-icon">API</span><strong>接收请求</strong><span>FastAPI</span></button>
+            <button class="node" data-step="2" type="button"><span class="node-icon">DB</span><strong>加载元数据</strong><span>授权 Schema</span></button>
+            <button class="node" data-step="3" type="button"><span class="node-icon">SQL</span><strong>生成候选</strong><span>规则 / LLM</span></button>
+            <button class="node" data-step="4" type="button"><span class="node-icon">AST</span><strong>安全校验</strong><span>SQLGlot</span></button>
+            <button class="node" data-step="5" type="button"><span class="node-icon">EX</span><strong>成本预检</strong><span>EXPLAIN</span></button>
+            <button class="node" data-step="6" type="button"><span class="node-icon">✓</span><strong>风险决策</strong><span>L0 / L1 / L2 / L3</span></button>
+            <button class="node" data-step="7" type="button"><span class="node-icon">RO</span><strong>只读执行</strong><span>Query Gateway</span></button>
+            <button class="node" data-step="8" type="button"><span class="node-icon">▥</span><strong>结果呈现</strong><span>ECharts / Table</span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail" aria-live="polite">
+        <div class="step-index" id="step-index">01</div>
+        <div><h2 id="step-title">用户提出业务问题</h2><p id="step-description">用户在 Vue 工作台输入中文问题；前端只负责收集输入和展示状态，不承担 SQL 安全判断。</p></div>
+        <div class="code-ref">当前代码位置<code id="step-code">frontend/src/App.vue → api.ts</code></div>
+      </div>
+    </section>
+
+    <section class="branches" aria-label="风险分支说明">
+      <article class="branch l0"><div class="branch-head"><h3>简单查询直达执行</h3><span class="risk">L0</span></div><p>SQL 结构简单且预计扫描量低，自动通过只读网关执行。</p></article>
+      <article class="branch l1"><div class="branch-head"><h3>复杂查询停在审批</h3><span class="risk">L1 / L2</span></div><p>JOIN、子查询、窗口函数或扫描量过高时，用 SQL 哈希绑定人工审批。</p></article>
+      <article class="branch l3"><div class="branch-head"><h3>越界能力永久拒绝</h3><span class="risk">L3</span></div><p>写操作、系统库、危险函数、未授权表等没有“管理员强行通过”通道。</p></article>
+    </section>
+
+    <section class="architecture">
+      <div class="section-heading">
+        <div><p class="eyebrow">Responsibility Layers</p><h2>四层职责，层层收紧权限</h2></div>
+        <p>从交互层向数据库靠近，能力越来越少、约束越来越强。模型没有数据库连接；前端也不能决定自己是否是管理员。</p>
+      </div>
+      <div class="layers">
+        <article class="layer"><span class="layer-number">01 / EXPERIENCE</span><h3>交互层</h3><p>收集问题、显示审批提示、结果、SQL 与执行时间线。</p><code>App.vue · ResultView.vue</code></article>
+        <article class="layer"><span class="layer-number">02 / ORCHESTRATION</span><h3>编排层</h3><p>维护显式状态，连接元数据、生成、校验、预检、执行和存储。</p><code>api.py · pipeline.py · schemas.py</code></article>
+        <article class="layer"><span class="layer-number">03 / CONTROL</span><h3>控制层</h3><p>解析 AST、限制表和行数、计算风险、绑定审批哈希。</p><code>sql_guard.py · visualization.py</code></article>
+        <article class="layer"><span class="layer-number">04 / DATA</span><h3>数据层</h3><p>EXPLAIN 与参数化查询只经过统一网关，账号仅有 SELECT 权限。</p><code>database.py · MySQL data_agent_ro</code></article>
+      </div>
+    </section>
+
+    <section class="facts">
+      <article class="fact-block">
+        <h2>当前已经跑通</h2>
+        <ul class="fact-list">
+          <li>规则型 Text-to-SQL 与 OpenAI-compatible LLM 接口</li>
+          <li>23 项后端测试、前端生产构建、真实 MySQL 连通</li>
+          <li>L0 自动执行、L1 审批后执行、L3 确定性拒绝</li>
+          <li>6 张演示表、图表/表格切换、执行轨迹展示</li>
+        </ul>
+      </article>
+      <article class="fact-block warning">
+        <h2>生产化前必须补齐</h2>
+        <ul class="fact-list">
+          <li>可信身份认证与服务端角色授权</li>
+          <li>请求、审批、策略版本和审计日志持久化</li>
+          <li>敏感字段、行级权限与结果字节上限</li>
+          <li>语义模型落地、准确率评测、澄清与受控重试</li>
+        </ul>
+      </article>
+    </section>
+
+    <footer><span>Data Agent · Controlled and auditable Text-to-SQL</span><span>建议阅读顺序：App.vue → api.py → pipeline.py → sql_guard.py → database.py</span></footer>
+  </main>
+
+  <script>
+    (() => {
+      const steps = [
+        { title: "用户提出业务问题", description: "用户在 Vue 工作台输入中文问题；前端只负责收集输入和展示状态，不承担 SQL 安全判断。", code: "frontend/src/App.vue → api.ts" },
+        { title: "API 创建可追踪记录", description: "FastAPI 校验请求，Pipeline 生成请求 ID，写入 RECEIVED 状态并保存第一条时间线事件。", code: "backend/app/api.py → pipeline.py → store.py" },
+        { title: "加载允许暴露的数据结构", description: "MetadataCatalog 从 information_schema 读取白名单表及字段，形成提供给规则或模型的受限上下文。", code: "backend/app/metadata.py" },
+        { title: "生成结构化候选 SQL", description: "规则 Provider 或兼容 OpenAI 的模型返回 SQL、口径假设、参数和建议图表；此时 SQL 仍无执行权。", code: "backend/app/llm.py" },
+        { title: "用 AST 建立确定性安全边界", description: "SQLGlot 拒绝多语句、写操作、系统库、危险函数、SELECT * 和越权表，并强制设置最大 LIMIT。", code: "backend/app/sql_guard.py" },
+        { title: "执行前先估算代价", description: "Query Gateway 运行 EXPLAIN FORMAT=JSON，提取预计扫描行数，与 SQL 结构风险合并。", code: "backend/app/database.py → pipeline._merge_cost_risk" },
+        { title: "按风险决定下一步", description: "L0 自动执行；L1/L2 返回待审批并绑定 SQL 哈希；L3 直接拒绝且不存在强行审批通道。", code: "backend/app/pipeline.py: submit / approve" },
+        { title: "通过唯一只读网关执行", description: "设置 Session 最大执行时间，参数化执行 SQL，限制返回行数，并由只读 MySQL 账号兜底权限。", code: "backend/app/database.py: QueryGateway.execute" },
+        { title: "整形结果并呈现审计轨迹", description: "后端生成图表规格和简短答案，前端显示 ECharts/表格、耗时、行数、风险、SQL、口径与时间线。", code: "visualization.py → ResultView.vue" }
+      ];
+
+      const scenarios = {
+        l0: { label: "L0 · 安全查询", stop: 8, wait: -1, danger: -1, skip: [], color: "var(--teal)" },
+        l1: { label: "L1 · 人工审批", stop: 8, wait: 6, danger: -1, skip: [], color: "var(--amber)" },
+        l3: { label: "L3 · 永久拒绝", stop: 6, wait: -1, danger: 6, skip: [7, 8], color: "var(--red)" }
+      };
+
+      const nodes = [...document.querySelectorAll(".node")];
+      const scenarioButtons = [...document.querySelectorAll(".scenario")];
+      const progress = document.getElementById("progress");
+      const packet = document.getElementById("packet");
+      const title = document.getElementById("step-title");
+      const description = document.getElementById("step-description");
+      const code = document.getElementById("step-code");
+      const index = document.getElementById("step-index");
+      const scenarioLabel = document.getElementById("scenario-label");
+      const play = document.getElementById("play");
+      let current = 0;
+      let scenario = "l0";
+      let timer = null;
+
+      function stopPlayback() {
+        if (timer) window.clearInterval(timer);
+        timer = null;
+        play.textContent = "▶ 自动播放";
+      }
+
+      function render() {
+        const config = scenarios[scenario];
+        current = Math.min(current, config.stop);
+        const percent = current / (nodes.length - 1) * 90;
+        progress.style.width = `${percent}%`;
+        packet.style.left = `calc(${5 + percent}% - 6px)`;
+        packet.style.background = config.color;
+        packet.style.boxShadow = `0 0 0 5px color-mix(in srgb, ${config.color} 13%, transparent), 0 0 24px ${config.color}`;
+
+        nodes.forEach((node, nodeIndex) => {
+          node.classList.toggle("is-done", nodeIndex < current && !config.skip.includes(nodeIndex));
+          node.classList.toggle("is-active", nodeIndex === current);
+          node.classList.toggle("is-skipped", config.skip.includes(nodeIndex));
+          node.classList.toggle("is-danger", nodeIndex === config.danger && nodeIndex === current);
+          node.classList.toggle("is-waiting", nodeIndex === config.wait && nodeIndex === current);
+        });
+
+        const step = steps[current];
+        index.textContent = String(current + 1).padStart(2, "0");
+        title.textContent = step.title;
+        description.textContent = step.description;
+        code.textContent = step.code;
+        scenarioLabel.textContent = config.label;
+
+        if (scenario === "l1" && current === 6) {
+          title.textContent = "请求暂停，等待人工审批";
+          description.textContent = "L1 由 analyst、L2 由 admin 审批。服务端必须核对当前状态、角色和 SQL 哈希，审批通过才继续执行。";
+        }
+        if (scenario === "l3" && current === 6) {
+          title.textContent = "查询触及禁止边界，永久拒绝";
+          description.textContent = "写操作、系统库、危险函数或未授权表会进入 REJECTED/L3；只读执行和结果展示节点不会被访问。";
+        }
+      }
+
+      function move(delta) {
+        const stop = scenarios[scenario].stop;
+        const next = Math.max(0, Math.min(stop, current + delta));
+        if (next === current && delta > 0) stopPlayback();
+        current = next;
+        render();
+      }
+
+      nodes.forEach((node, nodeIndex) => {
+        node.addEventListener("click", () => {
+          stopPlayback();
+          current = Math.min(nodeIndex, scenarios[scenario].stop);
+          render();
+        });
+      });
+
+      scenarioButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          stopPlayback();
+          scenario = button.dataset.scenario;
+          current = 0;
+          scenarioButtons.forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+          render();
+        });
+      });
+
+      document.getElementById("previous").addEventListener("click", () => { stopPlayback(); move(-1); });
+      document.getElementById("next").addEventListener("click", () => { stopPlayback(); move(1); });
+      play.addEventListener("click", () => {
+        if (timer) { stopPlayback(); return; }
+        if (current >= scenarios[scenario].stop) current = 0;
+        render();
+        play.textContent = "Ⅱ 暂停";
+        timer = window.setInterval(() => move(1), 1200);
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

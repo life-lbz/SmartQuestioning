@@ -1,0 +1,44 @@
+# Private environment and credentials
+.env
+.env.*
+!.env.example
+# Explicitly reviewed PUBLIC browser build settings
+!frontend-vben/apps/web-business/.env
+!frontend-vben/apps/web-business/.env.development
+!frontend-vben/apps/web-business/.env.production
+!frontend-vben/apps/web-business/.env.analyze
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+# Local runtime, databases and dependencies
+.runtime/
+.venv/
+node_modules/
+.pnpm-store/
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+*.log
+*.tsbuildinfo
+.pytest_cache/
+pytest-cache-files-*/
+.ruff_cache/
+.uv-cache/
+.npm-cache/
+.cache/
+.turbo/
+.nitro/
+.output/
+coverage/
+htmlcov/
+.coverage
+**/dist/
+**/dist.zip
+.idea/
+.vscode/
+
+.test-tmp-*/

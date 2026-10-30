@@ -1,0 +1,17 @@
+tables:
+  orders:
+    description: 订单事实表，一行代表一笔订单
+    allowed: true
+    time_column: created_at
+    columns:
+      amount:
+        description: 实付金额，单位为元
+        aliases: [销售额, GMV, 实收金额]
+      customer_phone:
+        sensitive: true
+        queryable: false
+metrics:
+  paid_gmv:
+    expression: SUM(orders.amount)
+    filter: orders.status = 'PAID'
+    description: 已支付订单实付金额合计

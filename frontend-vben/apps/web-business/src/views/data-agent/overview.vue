@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import { computed,onMounted,ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { Page } from '@vben/common-ui';
+import { Alert,Button,Card,Segmented,Statistic,Table } from 'ant-design-vue';
+import { api } from './client';
+import ResultChart from './result-chart.vue';
+const data=ref<any>(null);const error=ref('');const busy=ref(false);const router=useRouter();const months=ref(12);const chartType=ref<'line'|'bar'>('line');const updated=ref('');
+const trend=computed(()=>{const rows=data.value?.trend??[];return months.value?rows.slice(-months.value):rows;});
+const ranked=computed(()=>[...trend.value].sort((a,b)=>Number(b.revenue)-Number(a.revenue)).slice(0,5));
+const latest=computed(()=>trend.value.at(-1));
+const total=computed(()=>trend.value.reduce((sum:number,row:any)=>sum+Number(row.revenue),0));
+const states:Record<string,string>={completed:'已完成',approval_required:'待审批',failed:'执行失败',rejected:'安全拒绝',cancelled:'已取消'};
+async function load(){busy.value=true;error.value='';try{data.value=await api('/overview');updated.value=new Date().toLocaleTimeString('zh-CN');}catch(e){error.value=String(e);}finally{busy.value=false;}}
+onMounted(load);
+</script>
+<template><Page title="经营概览" description="业务表现与数据服务运行情况"><div class="insight-grid">
+ <Alert v-if="error" :message="error" type="error" />
+ <div class="overview-toolbar"><div><span class="live-dot"></span><strong>业务全景</strong><span class="quiet">MySQL · 演示数据</span></div><div><span class="quiet">更新于 {{updated||'—'}}</span><Button :loading="busy" @click="load">刷新数据</Button></div></div>
+ <template v-if="data">
+  <div class="metric-grid">
+   <Card class="metric-card primary-metric" :bordered="false"><div class="metric-caption">累计已支付销售额 <span>CNY</span></div><Statistic :value="Number(data.metrics?.revenue??0)" :precision="2" prefix="¥" /><div class="metric-footer">全部已支付订单 · 全历史口径</div><svg class="metric-decoration" viewBox="0 0 180 70" aria-hidden="true"><path d="M0 65 Q20 60 35 43 T70 36 T110 26 T150 12 L180 0" fill="none" stroke="currentColor" stroke-width="2" /></svg></Card>
+   <Card class="metric-card" :bordered="false"><div class="metric-caption">订单总量 <span>ORDERS</span></div><Statistic :value="Number(data.metrics?.orders??0)" suffix="笔" /><div class="metric-footer">覆盖全部订单状态</div></Card>
+   <Card class="metric-card" :bordered="false"><div class="metric-caption">成交客户 <span>CUSTOMERS</span></div><Statistic :value="Number(data.metrics?.customers??0)" suffix="位" /><div class="metric-footer">订单关联客户去重统计</div></Card>
+   <Card class="metric-card" :bordered="false"><div class="metric-caption">待审批查询 <span>PENDING</span></div><Statistic :value="data.query_states.approval_required??0" /><Button class="metric-link" type="link" @click="router.push('/approvals')">查看审批任务 →</Button></Card>
+  </div>
+  <Alert v-if="!data.metrics" message="业务数据库暂不可用，无法读取指标。" type="warning" />
+  <div class="analysis-grid">
+   <Card class="trend-card" :bordered="false"><template #title><div class="chart-heading"><strong>销售趋势</strong><span>已支付销售额 / 月</span></div></template><template #extra><Segmented v-model:value="chartType" :options="[{value:'line',label:'趋势'},{value:'bar',label:'柱状'}]" /></template>
+    <div class="chart-toolbar"><div><span class="quiet">所选区间累计</span><strong class="range-total">¥ {{total.toLocaleString('zh-CN',{maximumFractionDigits:2})}}</strong></div><Segmented v-model:value="months" :options="[{value:6,label:'近6月'},{value:12,label:'近12月'},{value:0,label:'全部'}]" /></div>
+    <ResultChart v-if="trend.length" :result="{columns:['month','revenue'],rows:trend,row_count:trend.length,elapsed_ms:0,truncated:false}" :chart="{type:chartType,title:'销售额',xField:'month',yFields:['revenue'],seriesNames:{revenue:'销售额'},smooth:true,stack:false}" />
+   </Card>
+   <Card :bordered="false" title="月度表现"><div class="latest-month"><span class="quiet">最新月份 · {{latest?.month??'—'}}</span><strong>¥ {{Number(latest?.revenue??0).toLocaleString()}}</strong></div><div class="ranking-title">所选区间 · 月度销售额 TOP 5</div><div v-for="(row,index) in ranked" :key="row.month" class="ranking-row"><span class="rank-number" :class="{leading:index===0}">{{index+1}}</span><div class="rank-detail"><div><span>{{row.month}}</span><strong>{{Number(row.revenue).toLocaleString()}}</strong></div><div class="rank-track"><span :style="{width:`${Number(row.revenue)/Number(ranked[0]?.revenue||1)*100}%`}" /></div></div></div></Card>
+  </div>
+  <Card :bordered="false" title="数据服务运行概况"><template #extra><Button type="primary" @click="router.push('/workbench')">新建查询</Button></template><Table :pagination="false" size="small" :columns="[{title:'查询状态',dataIndex:'status'},{title:'累计数量',dataIndex:'count'}]" :data-source="Object.entries(data.query_states).map(([status,count])=>({status:states[status]??status,count}))" row-key="status" /><div class="service-links"><Button @click="router.push('/history')">查看查询历史</Button><Button @click="router.push('/favorites')">收藏查询（{{data.favorites}}）</Button></div></Card>
+  <p class="data-note">数据说明：当前为合成演示数据，不代表真实经营情况。时间范围切换仅影响趋势与月度排行，顶部指标为全历史口径。</p>
+ </template>
+</div></Page></template>
+<style scoped>
+.insight-grid{display:grid;gap:20px}.overview-toolbar,.overview-toolbar>div,.chart-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.live-dot{height:7px;width:7px;background:#10b8a6;border-radius:50%}.quiet,.metric-footer,.data-note{color:#7b879b;font-size:12px}.metric-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:18px}.metric-card{position:relative;overflow:hidden;border-radius:10px;box-shadow:0 3px 14px #16294c04}.metric-caption{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:18px;color:#718098;font-size:13px}.metric-caption span{font-size:9px;letter-spacing:1px;opacity:.65}.metric-footer{margin-top:15px}.primary-metric{background:linear-gradient(115deg,#152e54,#214e8a);color:white}.primary-metric .metric-caption,.primary-metric .metric-footer{color:#adc4e6}.primary-metric :deep(.ant-statistic-content){color:white}.metric-card :deep(.ant-statistic-content){font-size:27px;font-weight:600;letter-spacing:-.7px;font-variant-numeric:tabular-nums}.metric-card :deep(.ant-statistic-content-suffix){font-size:12px;margin-left:6px;font-weight:400}.metric-decoration{position:absolute;right:0;bottom:0;width:140px;opacity:.16}.metric-link{padding:0;margin-top:12px;height:auto;font-size:12px}.analysis-grid{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(280px,1fr);gap:20px}.analysis-grid :deep(.ant-card){border-radius:10px}.chart-heading{display:flex;align-items:center;gap:16px}.chart-heading span{font-weight:400;font-size:12px;color:#8b97aa}.chart-toolbar{margin-bottom:16px}.chart-toolbar>div:first-child{display:grid;gap:6px}.range-total{font-size:23px;letter-spacing:-.5px;font-variant-numeric:tabular-nums}.latest-month{padding:18px;border-radius:8px;background:var(--color-muted,#f4f7fc);display:grid;gap:10px}.latest-month strong{font-size:22px;font-variant-numeric:tabular-nums}.ranking-title{margin:24px 0 20px;color:#7b879b;font-size:11px;letter-spacing:.4px}.ranking-row{display:flex;align-items:center;gap:12px;margin-bottom:22px}.rank-number{display:grid;place-items:center;border-radius:5px;width:24px;height:24px;background:#8b97aa12;color:#7d8ba2;font-size:12px}.rank-number.leading{background:#3976f61a;color:#3976f6}.rank-detail{flex:1;min-width:0}.rank-detail>div:first-child{display:flex;justify-content:space-between;font-size:12px}.rank-detail strong{font-weight:500;font-variant-numeric:tabular-nums}.rank-track{height:4px;background:#8b97aa12;margin-top:9px;border-radius:3px}.rank-track span{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#3976f6,#77b1ff);transition:width .65s ease}.service-links{display:flex;gap:12px;margin-top:18px}.data-note{margin:0;line-height:1.7}@media(max-width:1200px){.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.analysis-grid{grid-template-columns:1fr}}@media(max-width:600px){.metric-grid{grid-template-columns:1fr}.chart-heading span{display:none}.range-total{font-size:20px}}@media(prefers-reduced-motion:reduce){.rank-track span{transition:none}}
+</style>
