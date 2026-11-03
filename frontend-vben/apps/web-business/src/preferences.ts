@@ -1,6 +1,6 @@
 import { defineOverridesPreferences } from '@vben/preferences';
 export const overridesPreferences = defineOverridesPreferences({
-  app: { name: 'Data Agent', defaultHomePath: '/overview', enableCheckUpdates: false },
+  app: { name: 'Smart Questioning', defaultHomePath: '/overview', enableCheckUpdates: false },
   transition: { enable: false, loading: false, progress: false },
   theme: { mode: 'light', semiDarkSidebar: false, radius: '0.25' },
   copyright: { enable: false },

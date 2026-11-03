@@ -1,5 +1,5 @@
 [project]
-name = "data-agent"
+name = "smart-questioning"
 version = "0.1.0"
 description = "A small, controlled and auditable Text-to-SQL data agent"
 readme = "README.md"

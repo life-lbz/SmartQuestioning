@@ -54,7 +54,7 @@ def create_app(path: Path | None = None):
     gateway=QueryGateway(settings,engine)
     catalog=MetadataCatalog(settings,engine)
     pipeline=QuestionPipeline(settings,repository,catalog,TextToSqlProvider(settings),SqlGuard(settings),gateway)
-    app=FastAPI(title='Data Agent Internal Platform',version='1.0.0',docs_url=None,redoc_url=None,openapi_url=None)
+    app=FastAPI(title='Smart Questioning Internal Platform',version='1.0.0',docs_url=None,redoc_url=None,openapi_url=None)
     app.state.repository=repository
     approval_lock=asyncio.Lock()
     query_slots=asyncio.Semaphore(4)
@@ -69,7 +69,7 @@ def create_app(path: Path | None = None):
         return response
 
     def current(request: Request):
-        user=repository.session(request.cookies.get('data_agent_session',''))
+        user=repository.session(request.cookies.get('smart_questioning_session',''))
         if not user:
             raise HTTPException(401,'请先登录')
         if request.method not in ('GET','HEAD','OPTIONS'):
@@ -115,7 +115,7 @@ def create_app(path: Path | None = None):
             c.execute('DELETE FROM sessions WHERE expires<?',(now,))
             c.execute('DELETE FROM login_attempts WHERE identity=?',(identity,))
             c.execute('INSERT INTO sessions VALUES (?,?,?,?)',(token_hash(token),user['id'],csrf,now+28800))
-        response.set_cookie('data_agent_session',token,httponly=True,samesite='strict',secure=os.getenv('PLATFORM_HTTPS')=='1',max_age=28800,path='/')
+        response.set_cookie('smart_questioning_session',token,httponly=True,samesite='strict',secure=os.getenv('PLATFORM_HTTPS')=='1',max_age=28800,path='/')
         repository.event(user['username'],'login')
         return {'user':{k:user[k] for k in ('id','username','display_name','role')},'csrf_token':csrf}
 
@@ -125,8 +125,8 @@ def create_app(path: Path | None = None):
 
     @app.post('/api/v1/auth/logout')
     def logout(request: Request,response: Response,user=Depends(current)):
-        with repository.connect() as c: c.execute('DELETE FROM sessions WHERE token=?',(token_hash(request.cookies.get('data_agent_session','')),))
-        response.delete_cookie('data_agent_session',path='/')
+        with repository.connect() as c: c.execute('DELETE FROM sessions WHERE token=?',(token_hash(request.cookies.get('smart_questioning_session','')),))
+        response.delete_cookie('smart_questioning_session',path='/')
         repository.event(user['username'],'logout'); return {'ok':True}
 
     @app.post('/api/v1/auth/password')

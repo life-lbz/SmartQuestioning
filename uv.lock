@@ -64,7 +64,7 @@ wheels = [
 ]
 
 [[package]]
-name = "data-agent"
+name = "smart-questioning"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

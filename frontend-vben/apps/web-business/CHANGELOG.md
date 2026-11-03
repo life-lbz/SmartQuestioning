@@ -1,4 +1,4 @@
-# @vben/web-antd
+# @smart-questioning/web
 
 ## 5.8.0
 
