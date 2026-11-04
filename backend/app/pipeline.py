@@ -56,7 +56,7 @@ class QuestionPipeline:
             record.risk = validated.risk
             self._transition(record, QuestionStatus.SQL_VALIDATED, "SQL 安全校验通过")
 
-            estimated_rows = self.gateway.explain(
+            estimated_rows = await self.gateway.explain(
                 record.normalized_sql, record.generated.parameters
             )
             record.risk = self._merge_cost_risk(record.risk, estimated_rows)
@@ -106,7 +106,7 @@ class QuestionPipeline:
         assert record.generated and record.normalized_sql
         self._transition(record, QuestionStatus.EXECUTING, "正在通过只读网关执行")
         await self.store.save(record)
-        record.result = self.gateway.execute(
+        record.result = await self.gateway.execute(
             record.normalized_sql, record.generated.parameters, approved=approved
         )
         record.chart = build_chart_spec(

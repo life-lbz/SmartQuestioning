@@ -1,3 +1,5 @@
+import threading
+import time
 from typing import Any
 
 from sqlalchemy import text
@@ -30,14 +32,47 @@ DEMO_CATALOG: dict[str, Any] = {
 
 
 class MetadataCatalog:
+    """数据库元数据快照，mock 模式返回内置 DEMO_CATALOG，
+    真实模式查询 information_schema 并做 TTL 缓存（默认 5 分钟）。
+
+    缓存放在实例内，同进程共享。应用实例化后若数据库 schema 变化，
+    调 invalidate() 或等 TTL 过期即可刷新。
+    """
+
+    CACHE_TTL_SECONDS = 300
+
     def __init__(self, settings: Settings, engine: Engine | None) -> None:
         self.settings = settings
         self.engine = engine
+        self._cache: dict[str, Any] | None = None
+        self._cache_at: float = 0.0
+        self._lock = threading.Lock()
+
+    def invalidate(self) -> None:
+        with self._lock:
+            self._cache = None
+            self._cache_at = 0.0
 
     def snapshot(self) -> dict[str, Any]:
+        # mock 模式或无 engine 时不走缓存，每次直接返回 DEMO_CATALOG
         if self.settings.mock_mode or self.engine is None:
             return DEMO_CATALOG
 
+        now = time.time()
+        with self._lock:
+            if self._cache is not None and (now - self._cache_at) < self.CACHE_TTL_SECONDS:
+                return self._cache
+
+        fresh = self._build_snapshot()
+
+        with self._lock:
+            # 双重检查：构建期间可能已有其他线程写入
+            if self._cache is None or (time.time() - self._cache_at) >= self.CACHE_TTL_SECONDS:
+                self._cache = fresh
+                self._cache_at = time.time()
+            return self._cache
+
+    def _build_snapshot(self) -> dict[str, Any]:
         sql = text(
             """
             SELECT c.table_name, c.column_name, c.data_type, c.column_comment,

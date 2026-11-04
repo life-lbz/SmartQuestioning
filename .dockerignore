@@ -1,0 +1,16 @@
+node_modules/
+frontend-vben/node_modules/
+frontend-vben/apps/web-business/node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+.env
+.env.local
+.runtime/
+dist/
+frontend-vben/apps/web-business/dist/
+git/
+.DS_Store
+*.log

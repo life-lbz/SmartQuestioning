@@ -12,6 +12,7 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     app_secret_key: str = "development-only-change-me"
+    app_log_level: str = "INFO"
     app_cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:5173"]
     )

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from datetime import date, datetime
@@ -47,11 +48,16 @@ def _json_value(value: Any) -> Any:
 
 
 class QueryGateway:
+    """业务数据库只读网关。内部 SQLAlchemy 调用同步，对外暴露 async 接口，
+    用 asyncio.to_thread 把同步阻塞丢进线程池，避免卡死 FastAPI event loop。
+    """
+
     def __init__(self, settings: Settings, engine: Engine | None) -> None:
         self.settings = settings
         self.engine = engine
 
-    def status(self) -> dict[str, Any]:
+    # ---------- 同步内部实现 ----------
+    def _status_sync(self) -> dict[str, Any]:
         if self.settings.mock_mode or self.engine is None:
             return {"connected": False, "mode": "mock", "name": None, "version": None}
         try:
@@ -72,7 +78,7 @@ class QueryGateway:
                 "error": str(exc),
             }
 
-    def explain(self, sql: str, parameters: dict[str, Any]) -> int | None:
+    def _explain_sync(self, sql: str, parameters: dict[str, Any]) -> int | None:
         if self.settings.mock_mode or self.engine is None:
             return 12_000
         with self.engine.connect() as connection:
@@ -96,7 +102,7 @@ class QueryGateway:
         visit(plan)
         return max(estimates, default=None)
 
-    def execute(
+    def _execute_sync(
         self, sql: str, parameters: dict[str, Any], *, approved: bool = False
     ) -> QueryResult:
         if self.settings.mock_mode or self.engine is None:
@@ -125,6 +131,18 @@ class QueryGateway:
             elapsed_ms=elapsed_ms,
             truncated=truncated,
         )
+
+    # ---------- 对外 async 接口 ----------
+    async def status(self) -> dict[str, Any]:
+        return await asyncio.to_thread(self._status_sync)
+
+    async def explain(self, sql: str, parameters: dict[str, Any]) -> int | None:
+        return await asyncio.to_thread(self._explain_sync, sql, parameters)
+
+    async def execute(
+        self, sql: str, parameters: dict[str, Any], *, approved: bool = False
+    ) -> QueryResult:
+        return await asyncio.to_thread(self._execute_sync, sql, parameters, approved=approved)
 
     @staticmethod
     def _mock_execute(sql: str) -> QueryResult:

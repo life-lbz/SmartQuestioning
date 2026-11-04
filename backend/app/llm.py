@@ -40,6 +40,11 @@ def _query(sql: str, summary: str, assumptions: list[str], chart: str) -> Genera
 class TextToSqlProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self._client: httpx.AsyncClient | None = None
+
+    def bind_client(self, client: httpx.AsyncClient) -> None:
+        """注入常驻的 httpx client，复用 TCP 连接池。"""
+        self._client = client
 
     async def generate(self, question: str, catalog: dict[str, Any]) -> GeneratedQuery:
         if self.settings.mock_mode or self.settings.text_to_sql_mode.lower() == "rules":
@@ -74,9 +79,20 @@ class TextToSqlProvider:
         }
         headers = {"Authorization": f"Bearer {self.settings.llm_api_key}"}
         url = f"{self.settings.llm_base_url.rstrip('/')}/chat/completions"
-        async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(url, headers=headers, json=payload)
+
+        # 优先用注入的常驻 client；没注入时才临时建一个
+        own_client = False
+        if self._client is None:
+            self._client = httpx.AsyncClient(timeout=60)
+            own_client = True
+        try:
+            response = await self._client.post(url, headers=headers, json=payload)
             response.raise_for_status()
+        finally:
+            if own_client:
+                await self._client.aclose()
+                self._client = None
+
         content = response.json()["choices"][0]["message"]["content"]
         content = re.sub(r"^```(?:json)?|```$", "", content.strip()).strip()
         return GeneratedQuery.model_validate_json(content)
