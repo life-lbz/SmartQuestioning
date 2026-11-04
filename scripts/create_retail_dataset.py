@@ -98,7 +98,7 @@ def main():
         parts.append('COMMIT;')
         payload=('\n\n'.join(parts)+'\n').encode('utf-8')
         out.write_bytes(payload)
-        mysql=r'D:\phpstudy_pro\Extensions\MySQL8.0.12\bin\mysql.exe'
+        mysql=os.environ.get('MYSQL_BIN','mysql')
         env={**os.environ,'MYSQL_PWD':os.environ['MYSQL_ROOT_PASSWORD']}
         reports=[]
         for db in [DATABASE,DATABASE+'_verify']:

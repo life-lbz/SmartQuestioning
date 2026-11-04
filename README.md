@@ -65,7 +65,7 @@
 ### 1. 获取项目与安装依赖
 
 ```powershell
-git clone git@github.com:345488485/data-agent.git
+git clone https://github.com/life-lbz/SmartQuestional.git
 cd data-agent
 uv sync --locked
 

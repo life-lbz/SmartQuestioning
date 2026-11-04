@@ -423,7 +423,7 @@
     ]
   },
   "original_database_unchanged": true,
-  "sql_path": "D:\\uv\\data_agent\\database\\retail_demo_20261030.sql",
+  "sql_path": "database/retail_demo_20261030.sql",
   "sql_sha256": "0813a28570d64098418ffe81045a5d4faa9c4a472b97acbba983d0bc3c54ac64",
   "sql_bytes": 872662,
   "cent_rounding": "ROUND_HALF_UP; exact order/line-item equality, not tolerance"

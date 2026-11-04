@@ -13,7 +13,7 @@
 当前旧 `.venv` 的解释器指向另一台电脑。当前机器使用系统 Python 加载现有依赖：
 
 ```powershell
-cd D:\uv\data_agent
+cd .
 $env:PYTHONPATH="$PWD\.venv\Lib\site-packages"
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8011
 # 另开终端
@@ -23,7 +23,7 @@ npm run dev
 首次重新安装 Vben 工作区：
 
 ```powershell
-cd D:\uv\data_agent\frontend-vben
+cd .\frontend-vben
 pnpm install --ignore-scripts --no-frozen-lockfile
 pnpm --filter @vben/node-utils stub
 pnpm --filter @vben/vite-config stub
